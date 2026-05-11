@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Im Krankenhaus</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ─── Reset ─────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g:#58cc02;--g2:#46a302;--gl:#d7ffb8;
+  --b:#1cb0f6;--b2:#0992d0;--bl:#ddf4ff;
+  --r:#ff4b4b;--rl:#ffd8d8;
+  --y:#ffc800;--yl:#fff3b0;
+  --o:#ff9600;--p:#a855f7;
+  --n50:#f7f7f7;--n100:#ebebeb;--n200:#e5e5e5;
+  --n400:#afafaf;--n600:#6b6b6b;--n800:#3c3c3c;
+  --w:#fff;
+  font-family:'Nunito','Segoe UI',sans-serif;
+  color:var(--n800)
+}
+html,body{height:100%;background:var(--n50)}
+
+/* ─── Screen system ──────────────────────── */
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+
+/* ─── Buttons ────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:12px 24px;border:none;border-radius:9999px;
+  font-family:inherit;font-size:.95rem;font-weight:800;
+  cursor:pointer;user-select:none;
+  transition:transform .1s,filter .1s,box-shadow .1s
+}
+.btn:active{transform:translateY(2px)}
+.bg {background:var(--g);color:#fff;box-shadow:0 4px 0 var(--g2)}
+.bg:hover{filter:brightness(1.05)}
+.bg:active{box-shadow:0 2px 0 var(--g2);transform:translateY(2px)}
+.bgh{background:transparent;color:var(--b);border:2.5px solid var(--b)}
+.bgh:hover{background:var(--bl)}
+.br {background:var(--r);color:#fff;box-shadow:0 4px 0 #c22}
+.br:active{box-shadow:0 2px 0 #c22;transform:translateY(2px)}
+.bsm{padding:8px 16px;font-size:.82rem}
+.blg{padding:16px 36px;font-size:1.1rem}
+.bfw{width:100%}
+
+/* ─── Answer choices ─────────────────────── */
+.choice{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 16px;background:var(--w);
+  border:2.5px solid var(--n200);border-radius:14px;
+  font-family:inherit;font-size:.9rem;font-weight:700;
+  cursor:pointer;text-align:left;width:100%;color:var(--n800);
+  transition:border-color .15s,background .15s
+}
+.choice:hover{border-color:var(--b);background:var(--bl)}
+.choice.ok{border-color:var(--g);background:var(--gl);color:var(--g2)}
+.choice.no{border-color:var(--r);background:var(--rl);color:var(--r)}
+.choice:disabled{cursor:default}
+
+/* ─── Progress bar ───────────────────────── */
+.xpw{background:var(--n200);border-radius:9999px;height:13px;overflow:hidden}
+.xpb{
+  height:100%;border-radius:9999px;
+  background:linear-gradient(90deg,var(--g),#7be201);
+  transition:width .5s ease;position:relative
+}
+.xpb::after{
+  content:'';position:absolute;top:3px;left:6px;right:6px;height:3px;
+  background:rgba(255,255,255,.4);border-radius:9999px
+}
+
+/* ─── Top bar ────────────────────────────── */
+.topbar{
+  background:var(--w);border-bottom:2px solid var(--n100);
+  padding:10px 16px;display:flex;align-items:center;gap:12px;
+  flex-shrink:0
+}
+.tx{background:none;border:none;cursor:pointer;color:var(--n400);
+    font-size:1.4rem;line-height:1;padding:4px;border-radius:8px;
+    transition:color .15s;font-family:inherit;font-weight:900}
+.tx:hover{color:var(--n800)}
+.xplbl{display:flex;align-items:center;gap:4px;font-weight:800;
+       color:var(--o);font-size:.9rem;white-space:nowrap}
+
+/* ─── Keyframes ──────────────────────────── */
+@keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+@keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes moveTile{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes bump{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+.hidden{display:none!important}
+
+/* ═══════════════════════════════════════════
+   START SCREEN
+═══════════════════════════════════════════ */
+#screen-start{
+  background:linear-gradient(160deg,#e8f8ff 0%,#fff9e6 100%);
+  align-items:center;justify-content:center;padding:28px 16px;text-align:center
+}
+.hdeco{display:flex;align-items:flex-end;justify-content:center;margin-bottom:18px;height:110px}
+.hb{display:flex;flex-direction:column;align-items:center;border-radius:8px 8px 0 0;overflow:hidden}
+.hb-r{width:100%;height:16px;background:var(--b2)}
+.hb-b{flex:1;background:var(--w);border:2px solid var(--n200);border-bottom:none;width:100%;padding:3px}
+.hb-x{color:var(--r);font-size:1rem;font-weight:900;text-align:center}
+.hb-ws{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:0 2px}
+.hb-w{height:12px;background:var(--yl);border-radius:3px;border:1.5px solid var(--y);
+      animation:wb 3.5s ease-in-out infinite}
+.hb-w:nth-child(even){animation-delay:1.5s}
+@keyframes wb{0%,78%,100%{background:var(--yl)}89%{background:var(--y)}}
+
+.slogo{font-size:4.5rem;display:block;margin-bottom:6px;animation:pop 2.5s ease-in-out infinite}
+.stitle{font-size:2.6rem;font-weight:900;color:var(--n800);letter-spacing:-1px;line-height:1.1}
+.stitle span{color:var(--b)}
+.ssub{font-size:.9rem;color:var(--n600);margin:7px 0 22px;font-weight:700}
+.scard{
+  background:var(--w);border-radius:22px;padding:26px;
+  max-width:380px;width:100%;
+  box-shadow:0 8px 36px rgba(0,0,0,.14);border:2px solid var(--n100);
+  animation:slideDown .45s ease
+}
+.tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:18px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
+     border-radius:9999px;font-size:.72rem;font-weight:800}
+.tg{background:var(--gl);color:var(--g2)}
+.tb{background:var(--bl);color:var(--b2)}
+.ty{background:var(--yl);color:#a07000}
+.inp{
+  width:100%;padding:12px 16px;
+  border:2.5px solid var(--n200);border-radius:12px;
+  font-family:inherit;font-size:.95rem;font-weight:700;
+  color:var(--n800);background:var(--n50);outline:none;
+  transition:border-color .2s,box-shadow .2s;margin-bottom:12px
+}
+.inp:focus{border-color:var(--b);box-shadow:0 0 0 4px rgba(28,176,246,.13);background:var(--w)}
+
+/* ═══════════════════════════════════════════
+   SCENE 1 — PUZZLE
+═══════════════════════════════════════════ */
+#screen-s1{background:#f0fdf4}
+
+.s1wrap{
+  flex:1;display:grid;grid-template-columns:1fr 256px;
+  gap:14px;padding:14px;
+  max-width:800px;width:100%;margin:0 auto;align-items:start
+}
+
+.gridcard{
+  background:var(--w);border-radius:20px;padding:14px;
+  border:2px solid var(--n100);box-shadow:0 2px 8px rgba(0,0,0,.06)
+}
+.glbl{font-size:.75rem;font-weight:800;color:var(--n600);
+      text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+
+.ggrid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:4px
+}
+.cell{
+  aspect-ratio:1;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;font-weight:900;
+  background:var(--n50);border:2px solid var(--n100);
+  position:relative;transition:background .18s
+}
+.cell.wall {background:#dbeafe;border-color:#93c5fd}
+.cell.goal {background:var(--gl);border-color:var(--g);
+            animation:gg 2s ease-in-out infinite}
+.cell.path {background:var(--yl);border-color:var(--y)}
+.cell.sc   {background:var(--bl);border-color:var(--b)}
+@keyframes gg{0%,100%{box-shadow:none}50%{box-shadow:0 0 12px rgba(88,204,2,.5)}}
+
+.cell.player{background:var(--bl);border-color:var(--b);z-index:2}
+.cell.player .parrow{
+  font-size:1.5rem;line-height:1;
+  display:block;
+  transition:transform .08s
+}
+.cell.player.anim .parrow{animation:moveTile .25s ease}
+.cell.player.bump .parrow{animation:bump .3s ease}
+
+.glegend{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.gli{display:flex;align-items:center;gap:4px;font-size:.7rem;font-weight:700;color:var(--n600)}
+.gld{width:12px;height:12px;border-radius:3px}
+
+.cpanel{display:flex;flex-direction:column;gap:10px}
+.pc{background:var(--w);border-radius:20px;padding:13px;
+    border:2px solid var(--n100);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.pclbl{font-size:.72rem;font-weight:800;color:var(--n600);
+       text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+
+.cmdb{
+  display:flex;align-items:center;gap:8px;padding:10px 13px;
+  width:100%;border:none;border-radius:10px;
+  font-family:inherit;font-size:.86rem;font-weight:800;
+  cursor:pointer;margin-bottom:6px;color:#fff;
+  transition:filter .13s,transform .1s
+}
+.cmdb:last-child{margin-bottom:0}
+.cmdb:hover{filter:brightness(1.07)}
+.cmdb:active{transform:scale(.97)}
+.cm {background:var(--b);box-shadow:0 3px 0 var(--b2)}
+.clft{background:var(--p);box-shadow:0 3px 0 #7e22ce}
+.crgt{background:var(--o);box-shadow:0 3px 0 #c47200}
+
+.qa{background:var(--n800);border-radius:10px;padding:8px;min-height:62px}
+.qi{display:flex;flex-wrap:wrap;gap:4px;min-height:34px}
+.qc{
+  padding:4px 9px;border-radius:6px;
+  font-size:.72rem;font-weight:800;color:#fff;cursor:pointer;
+  transition:opacity .13s
+}
+.qc:hover{opacity:.6}
+.qc.maju {background:var(--b)}
+.qc.kiri {background:var(--p)}
+.qc.kanan{background:var(--o)}
+.qc.running{outline:2px solid #fff}
+
+.ar{display:flex;gap:6px}
+.ar .btn{flex:1}
+
+.hintbox{
+  background:var(--yl);border-radius:10px;padding:8px 10px;
+  font-size:.76rem;font-weight:700;color:#a07000;
+  border:1.5px solid var(--y)
+}
+
+/* ─── Reception overlay ────────────────── */
+.recov{
+  position:fixed;inset:0;background:rgba(0,0,0,.42);backdrop-filter:blur(5px);
+  z-index:200;display:flex;align-items:center;justify-content:center;
+  padding:20px;opacity:0;pointer-events:none;transition:opacity .28s
+}
+.recov.show{opacity:1;pointer-events:all}
+.recm{
+  background:var(--w);border-radius:22px;padding:26px;
+  max-width:400px;width:100%;text-align:center;
+  box-shadow:0 8px 36px rgba(0,0,0,.18);
+  transform:scale(.88);transition:transform .32s cubic-bezier(.34,1.56,.64,1)
+}
+.recov.show .recm{transform:scale(1)}
+.rchs{display:flex;align-items:flex-end;justify-content:center;gap:28px;margin-bottom:14px}
+.rch{display:flex;flex-direction:column;align-items:center;gap:3px}
+.rce{font-size:2.6rem}
+.rcn{font-size:.68rem;font-weight:800;color:var(--n600)}
+.sbub{
+  background:var(--bl);border:2.5px solid var(--b);border-radius:12px;
+  padding:10px 14px;font-size:.97rem;font-weight:800;color:var(--b2);
+  margin-bottom:14px;position:relative
+}
+.sbub::after{
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:7px solid transparent;border-top-color:var(--b);border-bottom:0
+}
+.rcc{display:flex;flex-direction:column;gap:7px}
+
+/* ═══════════════════════════════════════════
+   MAIN HOSPITAL (SCENE 2)
+═══════════════════════════════════════════ */
+#screen-hosp{background:#f0f8ff}
+
+.hbody{
+  flex:1;display:flex;flex-direction:column;
+  max-width:620px;width:100%;margin:0 auto;
+  padding:14px;gap:12px
+}
+
+/* Stage */
+.cstage{
+  background:linear-gradient(180deg,#e0f2fe,#bae6fd);
+  border-radius:20px;padding:20px 16px 14px;
+  border:2px solid #bae6fd;min-height:150px;
+  display:flex;align-items:center;justify-content:center;
+  gap:28px;position:relative;overflow:hidden
+}
+.sc2{display:flex;flex-direction:column;align-items:center;gap:4px;z-index:2;flex-shrink:0}
+.se2{font-size:3.4rem;display:block;transition:filter .25s,transform .2s}
+.sl2{
+  font-size:.68rem;font-weight:800;color:var(--b2);
+  background:rgba(255,255,255,.82);padding:2px 9px;border-radius:9999px
+}
+.sc2.dim .se2{filter:brightness(.4)saturate(.2)}
+.sc2.dim .sl2{opacity:.35}
+.sc2.talking .se2{animation:pop .4s ease infinite alternate}
+
+/* Stage bubble */
+.stbub{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  background:var(--w);border-radius:12px;
+  padding:8px 14px;font-size:.92rem;font-weight:800;
+  color:var(--n800);box-shadow:0 3px 16px rgba(0,0,0,.11);
+  text-align:center;z-index:10;
+  max-width:94%;animation:slideDown .28s ease;white-space:normal;
+  display:flex;flex-direction:column;gap:2px
+}
+.stbub .bw{font-size:.6rem;font-weight:800;text-transform:uppercase;
+           letter-spacing:1px;color:var(--b);margin-bottom:2px}
+.stbub::after{
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:var(--w);border-bottom:0
+}
+
+/* Speaker btn inside bubble */
+.spk-btn{
+  background:none;border:none;cursor:pointer;font-size:1rem;
+  align-self:center;padding:2px 4px;border-radius:6px;
+  transition:background .15s;margin-top:2px
+}
+.spk-btn:hover{background:var(--bl)}
+
+/* Q card */
+.qcard{
+  background:var(--w);border-radius:20px;padding:16px;
+  border:2px solid var(--n100);box-shadow:0 2px 8px rgba(0,0,0,.06);
+  animation:slideUp .3s ease
+}
+.qhead{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.qph{font-size:.66rem;font-weight:800;padding:2px 9px;
+     border-radius:9999px;text-transform:uppercase;letter-spacing:1px}
+.qcnt{font-size:.74rem;font-weight:700;color:var(--n400);margin-left:auto}
+.qtxt{font-size:.94rem;font-weight:800;color:var(--n800);
+      margin-bottom:10px;line-height:1.4}
+.qchoices{display:flex;flex-direction:column;gap:6px}
+
+/* Bottom action */
+.botact{
+  background:var(--w);border-top:2px solid var(--n100);
+  padding:12px 16px;position:sticky;bottom:0;z-index:10
+}
+.botact.ok{background:var(--gl);border-color:var(--g)}
+.botact.no{background:var(--rl);border-color:var(--r)}
+.botfb{display:flex;align-items:flex-start;gap:7px;
+       margin-bottom:9px;font-weight:700;font-size:.88rem}
+.botfb.ok{color:var(--g2)}
+.botfb.no{color:var(--r)}
+.bfi{font-size:1.25rem}
+
+/* ─── No-question step: just "continue" ── */
+.dial-only{
+  background:var(--w);border-radius:20px;padding:16px;
+  border:2px solid var(--n100);box-shadow:0 2px 8px rgba(0,0,0,.06);
+  animation:slideUp .3s ease;text-align:center
+}
+.dial-only .dol{font-size:.8rem;font-weight:700;color:var(--n400);margin-bottom:6px}
+.dial-only .dot{font-size:.9rem;font-weight:800;color:var(--n600);line-height:1.45;font-style:italic}
+
+/* ═══════════════════════════════════════════
+   REVIEW SCREEN
+═══════════════════════════════════════════ */
+#screen-review{background:linear-gradient(160deg,#e8f8ff 0%,#edfbe8 100%)}
+
+.rev-body{
+  flex:1;display:flex;flex-direction:column;
+  max-width:560px;width:100%;margin:0 auto;
+  padding:14px;gap:12px
+}
+.rev-hdr{text-align:center;padding:6px 0 2px}
+.rev-hdr h2{font-size:1.2rem;font-weight:900;color:var(--n800)}
+.rev-hdr p{font-size:.78rem;font-weight:700;color:var(--n400)}
+
+/* Review stage */
+.rstage{
+  background:linear-gradient(180deg,#e0f2fe,#bae6fd);
+  border-radius:20px;padding:20px 16px 16px;
+  border:2px solid #bae6fd;min-height:150px;
+  display:flex;align-items:center;justify-content:center;
+  gap:28px;position:relative;overflow:hidden
+}
+
+/* Review bubble */
+.rbub{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  background:var(--w);border-radius:12px;
+  padding:8px 14px;font-size:.9rem;font-weight:800;
+  color:var(--n800);box-shadow:0 3px 16px rgba(0,0,0,.11);
+  text-align:center;z-index:10;max-width:94%;
+  white-space:normal;min-height:52px;
+  display:flex;flex-direction:column;align-items:center;gap:3px
+}
+.rbub::after{
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:var(--w);border-bottom:0
+}
+.rbub .bw{font-size:.6rem;font-weight:800;text-transform:uppercase;
+           letter-spacing:1px;color:var(--b);margin-bottom:1px}
+
+/* Review line list */
+.rev-list{
+  background:var(--w);border-radius:18px;padding:14px;
+  border:2px solid var(--n100);box-shadow:0 2px 8px rgba(0,0,0,.06);
+  display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto
+}
+.rev-line{
+  display:flex;align-items:flex-start;gap:8px;padding:8px 10px;
+  border-radius:10px;border:1.5px solid transparent;
+  transition:background .2s,border-color .2s;cursor:pointer
+}
+.rev-line:hover{background:var(--bl);border-color:var(--b)}
+.rev-line.active{background:var(--gl);border-color:var(--g)}
+.rev-line .rlem{font-size:1.3rem;flex-shrink:0;margin-top:1px}
+.rev-line .rltxt{font-size:.82rem;font-weight:700;color:var(--n800);line-height:1.4}
+.rev-line .rlwho{font-size:.62rem;font-weight:800;color:var(--n400);text-transform:uppercase;
+                 letter-spacing:.6px;margin-bottom:2px}
+
+/* Review controls */
+.rev-ctrl{display:flex;gap:8px;align-items:center}
+.rev-ctrl .btn{flex:1}
+.rev-prog{font-size:.76rem;font-weight:800;color:var(--n600);text-align:center;white-space:nowrap}
+
+/* Playing indicator */
+.playing-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--g);
+  display:inline-block;animation:pulse 1s ease infinite;margin-left:4px
+}
+
+/* ═══════════════════════════════════════════
+   FINISH
+═══════════════════════════════════════════ */
+#screen-finish{
+  background:linear-gradient(160deg,#e8f8ff 0%,#fff9e6 100%);
+  align-items:center;justify-content:center;padding:24px 16px
+}
+.fincard{
+  background:var(--w);border-radius:22px;padding:30px 24px;
+  max-width:420px;width:100%;text-align:center;
+  box-shadow:0 8px 36px rgba(0,0,0,.14);border:2px solid var(--n100);
+  animation:slideDown .45s ease
+}
+.ftr{font-size:4.5rem;animation:pop 2s ease-in-out infinite;display:block}
+.fgr{font-size:1.15rem;font-weight:900;margin:6px 0 3px}
+.fnm{font-size:1.65rem;font-weight:900;color:var(--n800)}
+.fsc{font-size:3.4rem;font-weight:900;line-height:1.15;margin:4px 0}
+.fti{font-size:.83rem;color:var(--n400);font-weight:700;margin-bottom:16px}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:18px}
+.stile{background:var(--n50);border-radius:12px;padding:9px;border:2px solid var(--n100)}
+.stv{font-size:1.25rem;font-weight:900;color:var(--b2)}
+.stl{font-size:.66rem;font-weight:700;color:var(--n400);margin-top:1px}
+.fin-btns{display:flex;flex-direction:column;gap:8px}
+
+@media(max-width:620px){
+  .s1wrap{grid-template-columns:1fr}
+  .fsc{font-size:2.6rem}
+}
+
+/* Patient animation keyframes */
+.ak{animation:kopf 1.2s ease-in-out infinite}
+.ab{animation:bauch 1.2s ease-in-out infinite}
+.af{animation:fieber .9s ease-in-out infinite}
+.ah{animation:husten 1s ease-in-out infinite}
+@keyframes kopf  {0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+@keyframes bauch {0%,100%{transform:scaleX(1)}50%{transform:scaleX(1.12)}}
+@keyframes fieber{0%,100%{transform:scale(1)}50%{transform:scale(1.1) translateY(-3px)}}
+@keyframes husten{0%,100%{transform:rotate(0) scale(1)}40%{transform:rotate(-10deg) scale(1.12)}70%{transform:rotate(4deg) scale(.94)}}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════
+     START
+═══════════════════════════════════ -->
+<div id="screen-start" class="screen active">
+  <div class="hdeco">
+    <div class="hb" style="width:62px;height:72px">
+      <div class="hb-r"></div>
+      <div class="hb-b"><div class="hb-x">+</div>
+      <div class="hb-ws"><div class="hb-w"></div><div class="hb-w"></div><div class="hb-w"></div><div class="hb-w"></div></div></div>
+    </div>
+    <div class="hb" style="width:86px;height:108px">
+      <div class="hb-r"></div>
+      <div class="hb-b"><div class="hb-x">🏥</div>
+      <div class="hb-ws"><div class="hb-w"></div><div class="hb-w"></div><div class="hb-w"></div><div class="hb-w"></div><div class="hb-w"></div><div class="hb-w"></div></div></div>
+    </div>
+    <div class="hb" style="width:58px;height:62px">
+      <div class="hb-r"></div>
+      <div class="hb-b">
+      <div class="hb-ws"><div class="hb-w"></div><div class="hb-w"></div><div class="hb-w"></div><div class="hb-w"></div></div></div>
+    </div>
+  </div>
+
+  <span class="slogo">🏥</span>
+  <div class="stitle">Im <span>Kranken</span>haus</div>
+  <div class="ssub">Belajar Bahasa Jerman lewat petualangan rumah sakit</div>
+
+  <div class="scard">
+    <div class="tags">
+      <span class="tag tb">🧩 Puzzle Navigasi</span>
+      <span class="tag tg">💬 Dialog Jerman</span>
+      <span class="tag ty">⭐ Skor Akhir</span>
+    </div>
+    <input type="text" class="inp" id="pname"
+           placeholder="Masukkan nama kamu..." maxlength="24" autocomplete="off">
+    <button class="btn bg blg bfw" onclick="startGame()">🚀 Mulai Belajar</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     SCENE 1 — PUZZLE
+═══════════════════════════════════ -->
+<div id="screen-s1" class="screen">
+  <div class="topbar">
+    <button class="tx" onclick="confirmQuit()">✕</button>
+    <div class="xpw" style="flex:1"><div class="xpb" style="width:8%" id="xb1"></div></div>
+    <div class="xplbl">⚡ <span id="xd1">0</span></div>
+  </div>
+
+  <div class="s1wrap">
+    <!-- Grid -->
+    <div>
+      <div class="gridcard">
+        <div class="glbl">🗺️ Antar pasien ke pintu masuk!</div>
+        <div class="ggrid" id="gameGrid"></div>
+        <div class="glegend">
+          <div class="gli">
+            <div class="gld" style="background:#dbeafe;border:2px solid #93c5fd"></div>
+            Penghalang
+          </div>
+          <div class="gli">
+            <div class="gld" style="background:var(--gl);border:2px solid var(--g)"></div>
+            Tujuan 🚪
+          </div>
+          <div class="gli">
+            <div class="gld" style="background:var(--bl);border:2px solid var(--b)"></div>
+            Pemain
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code panel -->
+    <div class="cpanel">
+      <div class="pc">
+        <div class="pclbl">📦 Blok Perintah</div>
+        <button class="cmdb cm"  onclick="addCmd('maju')"><span>⬆️</span> Maju</button>
+        <button class="cmdb clft" onclick="addCmd('kiri')"><span>↩️</span> Belok Kiri</button>
+        <button class="cmdb crgt" onclick="addCmd('kanan')"><span>↪️</span> Belok Kanan</button>
+      </div>
+
+      <div class="pc">
+        <div class="pclbl">📋 Antrian <span style="font-size:.65rem;color:var(--n400)">(ketuk hapus)</span></div>
+        <div class="qa"><div class="qi" id="qi"></div></div>
+      </div>
+
+      <div class="ar">
+        <button class="btn bg bsm"  onclick="runCmds()">▶ Jalankan</button>
+        <button class="btn bgh bsm" onclick="resetPuzzle()">↩ Reset</button>
+        <button class="btn br bsm"  onclick="clearQ()">🗑</button>
+      </div>
+
+      <div class="hintbox" id="hintBox">💡 Panah = arah gerak. Min. 2–3 belokan!</div>
+    </div>
+  </div>
+</div>
+
+<!-- Reception overlay -->
+<div class="recov" id="recov">
+  <div class="recm">
+    <div style="font-size:.68rem;font-weight:800;color:var(--n400);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">
+      🏥 Resepsionis
+    </div>
+    <div class="rchs">
+      <div class="rch"><div class="rce" id="rpE">🧑</div><div class="rcn">Pasien</div></div>
+      <div class="rch"><div class="rce">👩‍⚕️</div><div class="rcn">Resepsionis</div></div>
+    </div>
+    <div class="sbub" id="recBub">"Haben Sie einen Termin?"</div>
+    <div style="font-size:.76rem;font-weight:700;color:var(--n600);margin-bottom:8px">
+      Pilih jawaban pasien:
+    </div>
+    <div class="rcc">
+      <button class="choice" onclick="answerRec()">
+        <span>✅</span> "Ja, ich habe einen Termin."
+      </button>
+      <button class="choice" onclick="answerRec()">
+        <span>❌</span> "Nein, ich habe keinen Termin."
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     MAIN HOSPITAL (SCENE 2)
+═══════════════════════════════════ -->
+<div id="screen-hosp" class="screen">
+  <div class="topbar">
+    <button class="tx" onclick="confirmQuit()">✕</button>
+    <div class="xpw" style="flex:1"><div class="xpb" id="xbH" style="width:40%"></div></div>
+    <div class="xplbl">⚡ <span id="xdH">0</span></div>
+  </div>
+
+  <div class="hbody">
+    <!-- Stage -->
+    <div class="cstage" id="cstage">
+      <div class="sc2" id="sDoc">
+        <span class="se2">👨‍⚕️</span>
+        <span class="sl2">Doktor</span>
+      </div>
+      <div class="stbub hidden" id="stBub">
+        <div class="bw" id="bWho"></div>
+        <div id="bTxt"></div>
+        <button class="spk-btn" id="spkBtn" title="Dengarkan" onclick="speakCurrent()">🔊</button>
+      </div>
+      <div class="sc2" id="sPat">
+        <span class="se2" id="pEmoji">😷</span>
+        <span class="sl2">Pasien</span>
+      </div>
+    </div>
+
+    <!-- Q card / dial-only -->
+    <div id="stepContent"></div>
+  </div>
+
+  <div class="botact" id="botAct">
+    <div class="botfb hidden" id="botFb">
+      <span class="bfi" id="fbI"></span>
+      <span id="fbT"></span>
+    </div>
+    <button class="btn bg bfw hidden" id="contBtn" onclick="nextStep()">Lanjut →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     REVIEW SCENE
+═══════════════════════════════════ -->
+<div id="screen-review" class="screen">
+  <div class="topbar">
+    <button class="tx" onclick="skipReview()">✕</button>
+    <div style="flex:1;text-align:center;font-size:.82rem;font-weight:800;color:var(--n600)">
+      🎬 Ulasan Percakapan
+    </div>
+    <div class="xplbl" id="revProgLbl">1/10</div>
+  </div>
+
+  <div class="rev-body">
+    <div class="rev-hdr">
+      <h2>Ulasan Percakapan</h2>
+      <p>Dengarkan dan ikuti percakapan dari awal sampai akhir</p>
+    </div>
+
+    <!-- Review stage -->
+    <div class="rstage" id="rstage">
+      <div class="sc2" id="rsDoc">
+        <span class="se2">👨‍⚕️</span>
+        <span class="sl2">Doktor</span>
+      </div>
+      <div class="rbub" id="rbub">
+        <div class="bw" id="rbWho">…</div>
+        <div id="rbTxt">Siap memulai ulasan</div>
+      </div>
+      <div class="sc2" id="rsPat">
+        <span class="se2" id="rpEmoji">😷</span>
+        <span class="sl2">Pasien</span>
+      </div>
+    </div>
+
+    <!-- Dialogue list -->
+    <div class="rev-list" id="revList"></div>
+
+    <!-- Controls -->
+    <div class="rev-ctrl">
+      <button class="btn bgh bsm" onclick="revPlayPause()" id="revPlayBtn">▶ Putar</button>
+      <span class="rev-prog" id="revProgTxt">0 / <span id="revTotal">10</span></span>
+      <button class="btn bg bsm" onclick="skipReview()">Selesai →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     FINISH
+═══════════════════════════════════ -->
+<div id="screen-finish" class="screen">
+  <div class="fincard">
+    <span class="ftr" id="fTr">🏆</span>
+    <div class="fgr" id="fGr">Sangat Bagus!</div>
+    <div class="fnm" id="fNm">Nama</div>
+    <div class="fsc" id="fSc">0</div>
+    <div class="fti" id="fTi">⏱ 00:00</div>
+    <div class="sg">
+      <div class="stile"><div class="stv" id="sb1">—</div><div class="stl">🧩 Navigasi</div></div>
+      <div class="stile"><div class="stv" id="sb2">—</div><div class="stl">🏥 Resepsionis</div></div>
+      <div class="stile"><div class="stv" id="sb3">—</div><div class="stl">🩺 Percakapan</div></div>
+      <div class="stile"><div class="stv" id="sb4">—</div><div class="stl">❌ Kesalahan</div></div>
+    </div>
+    <div class="fin-btns">
+      <button class="btn bgh bfw" onclick="goReview()">🎬 Lihat Ulasan</button>
+      <button class="btn bg bfw" onclick="restart()">🔄 Main Lagi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   GLOBAL STATE & HELPERS
+══════════════════════════════════════════ */
+const G = { name:'', t0:0, sc:{nav:0,rec:0,hosp:0}, err:0, ill:null };
+
+const $ = id => document.getElementById(id);
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + id).classList.add('active');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function total() { return G.sc.nav + G.sc.rec + G.sc.hosp; }
+
+function fmt(ms) {
+  const s = Math.floor(ms / 1000), m = Math.floor(s / 60);
+  return `${String(m).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+}
+
+function confirmQuit() {
+  if (confirm('Keluar? Progress akan hilang.')) restart();
+}
+
+/* ══════════════════════════════════════════
+   SPEECH SYNTHESIS (TTS)
+══════════════════════════════════════════ */
+let ttsEnabled = ('speechSynthesis' in window);
+let currentDialogueLine = '';
+
+function speak(text, lang = 'de-DE', rate = 0.88) {
+  if (!ttsEnabled) return;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+    u.rate = rate;
+    u.pitch = 1.05;
+    window.speechSynthesis.speak(u);
+  } catch(e) {}
+}
+
+function speakCurrent() {
+  if (currentDialogueLine) speak(currentDialogueLine);
+}
+
+function speakChoice(text) {
+  // Choices may be German — detect heuristically (contains umlauts or known German words)
+  speak(text, 'de-DE', 0.9);
+}
+
+/* ══════════════════════════════════════════
+   START
+══════════════════════════════════════════ */
+function startGame() {
+  const n = $('pname').value.trim();
+  if (!n) {
+    $('pname').style.borderColor = 'var(--r)';
+    $('pname').focus();
+    setTimeout(() => $('pname').style.borderColor = '', 1400);
+    return;
+  }
+  G.name = n;
+  G.t0   = Date.now();
+  G.sc   = { nav:0, rec:0, hosp:0 };
+  G.err  = 0;
+  G.ill  = ILLS[Math.floor(Math.random() * ILLS.length)];
+  initS1();
+  showScreen('s1');
+}
+
+/* ══════════════════════════════════════════
+   SCENE 1 — PUZZLE
+══════════════════════════════════════════ */
+
+const DIR_ARROW = { up:'⬆️', down:'⬇️', left:'⬅️', right:'➡️' };
+const DIR_DELTA = { up:[-1,0], down:[1,0], left:[0,-1], right:[0,1] };
+const TURN_L = { up:'left',  left:'down',  down:'right', right:'up'  };
+const TURN_R = { up:'right', right:'down', down:'left',  left:'up'   };
+
+const PUZZLES = [
+  { g: [ [0,1,1,0],[0,0,1,0],[1,0,0,0],[1,1,0,'G'] ], start:[0,0], dir:'down', goal:[3,3] },
+  { g: [ [0,0,0,1],[1,1,0,1],[1,0,0,0],[1,0,1,'G'] ], start:[0,0], dir:'right', goal:[3,3] },
+  { g: [ [0,1,1,1],[0,0,1,1],[1,0,0,1],[1,1,0,'G'] ], start:[0,0], dir:'down', goal:[3,3] },
+  { g: [ [0,0,0,0],[1,1,1,0],[1,1,1,0],[1,1,1,'G'] ], start:[0,0], dir:'right', goal:[3,3] },
+  { g: [ [0,1,1,1],[0,0,1,1],[1,0,1,1],[1,0,0,'G'] ], start:[0,0], dir:'down', goal:[3,3] },
+];
+
+const WALL_ICONS = ['🪴','🧑‍🦽','🛒','📦','🪑','🏺'];
+
+let puz, pRow, pCol, pDir, cmdQ, isRunning, trailCells;
+
+function initS1() {
+  $('xd1').textContent = total();
+  $('xb1').style.width = total() + '%';
+  const idx = Math.floor(Math.random() * PUZZLES.length);
+  puz      = PUZZLES[idx];
+  pRow     = puz.start[0];
+  pCol     = puz.start[1];
+  pDir     = puz.dir;
+  cmdQ     = [];
+  isRunning = false;
+  trailCells = [];
+  buildGrid();
+  renderQ();
+  renderPlayer();
+  setHint();
+}
+
+function buildGrid() {
+  const g = $('gameGrid');
+  g.innerHTML = '';
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const el = document.createElement('div');
+      el.className = 'cell';
+      el.id = `r${r}c${c}`;
+      const v = puz.g[r][c];
+      if (v === 1) {
+        el.classList.add('wall');
+        el.textContent = WALL_ICONS[(r * 4 + c) % WALL_ICONS.length];
+      } else if (v === 'G') {
+        el.classList.add('goal');
+        el.textContent = '🚪';
+      }
+      g.appendChild(el);
+    }
+  }
+}
+
+function renderPlayer() {
+  document.querySelectorAll('.cell.player').forEach(el => {
+    el.classList.remove('player', 'anim', 'bump');
+    el.innerHTML = '';
+    const [r, c] = cellCoords(el.id);
+    if (puz.g[r][c] === 'G') el.textContent = '🚪';
+  });
+  const cell = $(`r${pRow}c${pCol}`);
+  cell.classList.add('player');
+  cell.innerHTML = `<span class="parrow">${DIR_ARROW[pDir]}</span>`;
+  $('xd1').textContent = total();
+}
+
+function cellCoords(id) {
+  const m = id.match(/r(\d)c(\d)/);
+  return m ? [+m[1], +m[2]] : [0, 0];
+}
+
+function addCmd(t) {
+  if (isRunning || cmdQ.length >= 16) return;
+  cmdQ.push(t);
+  renderQ();
+}
+
+function renderQ() {
+  const qi = $('qi');
+  qi.innerHTML = '';
+  cmdQ.forEach((cmd, i) => {
+    const chip = document.createElement('div');
+    chip.className = `qc ${cmd}`;
+    chip.id = `chip${i}`;
+    chip.textContent = cmd === 'maju' ? '⬆' : cmd === 'kiri' ? '↩' : '↪';
+    chip.title = 'Ketuk untuk hapus';
+    chip.onclick = () => { if (!isRunning) { cmdQ.splice(i, 1); renderQ(); } };
+    qi.appendChild(chip);
+  });
+}
+
+function clearQ() {
+  if (!isRunning) { cmdQ = []; renderQ(); }
+}
+
+function resetPuzzle() {
+  if (isRunning) return;
+  trailCells.forEach(id => {
+    const el = $(id);
+    if (el) el.classList.remove('path');
+  });
+  trailCells = [];
+  const startEl = $(`r${puz.start[0]}c${puz.start[1]}`);
+  if (startEl) startEl.classList.remove('path');
+  pRow = puz.start[0];
+  pCol = puz.start[1];
+  pDir = puz.dir;
+  cmdQ = [];
+  renderQ();
+  renderPlayer();
+  setHint();
+}
+
+function setHint() {
+  const dName = { up:'atas ⬆️', down:'bawah ⬇️', left:'kiri ⬅️', right:'kanan ➡️' };
+  $('hintBox').innerHTML = `💡 Menghadap ke <strong>${dName[pDir]}</strong>. Min. 2–3 belokan!`;
+}
+
+async function runCmds() {
+  if (isRunning || cmdQ.length === 0) return;
+  isRunning = true;
+
+  for (let i = 0; i < cmdQ.length; i++) {
+    const cmd   = cmdQ[i];
+    const chip  = $(`chip${i}`);
+    if (chip) chip.classList.add('running');
+
+    await sleep(220);
+
+    if (cmd === 'maju') {
+      const d   = DIR_DELTA[pDir];
+      const nr  = pRow + d[0];
+      const nc  = pCol + d[1];
+
+      if (nr < 0 || nr > 3 || nc < 0 || nc > 3) {
+        await doBump('Keluar batas!');
+        isRunning = false;
+        return;
+      }
+
+      const v = puz.g[nr][nc];
+
+      if (v === 1) {
+        await doBump('Ada penghalang!');
+        isRunning = false;
+        return;
+      }
+
+      const curId = `r${pRow}c${pCol}`;
+      const curEl = $(curId);
+      if (curEl && puz.g[pRow][pCol] !== 'G') {
+        curEl.classList.remove('player');
+        curEl.innerHTML = '';
+        curEl.classList.add('path');
+        trailCells.push(curId);
+      }
+
+      pRow = nr;
+      pCol = nc;
+
+      const newEl = $(`r${pRow}c${pCol}`);
+      if (newEl) {
+        newEl.classList.remove('goal');
+        newEl.innerHTML = '';
+      }
+      renderPlayer();
+      const playerEl = $(`r${pRow}c${pCol}`);
+      if (playerEl) {
+        playerEl.classList.add('anim');
+        await sleep(280);
+        playerEl.classList.remove('anim');
+      }
+
+      if (v === 'G') {
+        if (chip) chip.classList.remove('running');
+        await sleep(300);
+        onGoal();
+        return;
+      }
+
+    } else if (cmd === 'kiri') {
+      pDir = TURN_L[pDir];
+      renderPlayer();
+      await sleep(220);
+
+    } else if (cmd === 'kanan') {
+      pDir = TURN_R[pDir];
+      renderPlayer();
+      await sleep(220);
+    }
+
+    if (chip) chip.classList.remove('running');
+    setHint();
+  }
+
+  $('hintBox').innerHTML = '⚠️ <strong>Perintah habis</strong> tapi belum sampai. Coba lagi!';
+  isRunning = false;
+}
+
+async function doBump(msg) {
+  const cell = $(`r${pRow}c${pCol}`);
+  if (cell) {
+    cell.classList.add('bump');
+    await sleep(340);
+    cell.classList.remove('bump');
+  }
+  $('hintBox').innerHTML = `⚠️ <strong>${msg}</strong> Reset dan coba jalur lain.`;
+  await sleep(100);
+  resetPuzzle();
+}
+
+function onGoal() {
+  G.sc.nav = 30;
+  $('rpE').textContent = G.ill.emoji;
+  $('recov').classList.add('show');
+}
+
+/* ══════════════════════════════════════════
+   RECEPTION
+══════════════════════════════════════════ */
+let recLock = false;
+function answerRec() {
+  if (recLock) return;
+  recLock = true;
+  G.sc.rec = 10;
+  $('rpE').style.animation = 'bounce .45s ease';
+  setTimeout(() => $('rpE').style.animation = '', 500);
+  $('recBub').textContent = '"Bitte warten Sie! 🙂"';
+  setTimeout(() => {
+    $('recov').classList.remove('show');
+    recLock = false;
+    initHosp();
+    showScreen('hosp');
+  }, 1600);
+}
+
+/* ══════════════════════════════════════════
+   ILLNESS DATA
+   
+   Each illness has 10 steps following the exact conversation order:
+   1. Patient greets
+   2. Doctor greets + asks what's wrong
+   3. Patient explains illness
+   4. Doctor asks duration
+   5. Patient answers duration
+   6. Doctor gives medicine/advice
+   7. Patient asks: before or after eating?
+   8. Doctor answers instructions
+   9. Patient says thank you
+   10. Doctor wishes recovery + goodbye / patient says goodbye
+
+   Steps with sp=null have no dialogue bubble (description/symptom steps).
+   Steps with q=null show as "dial-only" (no question, just read and continue).
+   Steps with q!=null show a multiple-choice question.
+══════════════════════════════════════════ */
+const ILLS = [
+  /* ── KOPFSCHMERZEN ── */
+  {
+    name: 'Kopfschmerzen', emoji: '🤕', ac: 'ak',
+    steps: [
+      /* 1 — Patient greets */
+      { sp:'patient', dl:'Guten Tag! Ich bin Patient. Ich habe einen Termin.',
+        q:'Der Patient sagt beim ersten Kontakt:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Guten Tag! / Hallo!', c:true},
+          {t:'Auf Wiedersehen!', c:false},
+          {t:'Danke schön!', c:false},
+          {t:'Bitte sehr!', c:false}
+        ]},
+      /* 2 — Doctor greets + asks */
+      { sp:'doctor', dl:'Guten Tag! Bitte setzen Sie sich. Was fehlt Ihnen heute?',
+        q:'Apa yang ingin dokter ketahui dari pertanyaan itu?',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Nama pasien', c:false},
+          {t:'Keluhan atau masalah kesehatan pasien', c:true},
+          {t:'Alamat pasien', c:false},
+          {t:'Usia pasien', c:false}
+        ]},
+      /* 3 — Patient explains */
+      { sp:'patient', dl:'Ich habe seit gestern starke Kopfschmerzen. Ich bin sehr müde.',
+        q:'Was sagt der Patient über seinen Zustand?',
+        qtype:'de-q-de-a',
+        ch:[
+          {t:'Er hat Fieber und Husten.', c:false},
+          {t:'Er hat starke Kopfschmerzen und ist müde.', c:true},
+          {t:'Er hat Bauchschmerzen.', c:false},
+          {t:'Er fühlt sich sehr gut.', c:false}
+        ]},
+      /* 4 — Doctor asks duration */
+      { sp:'doctor', dl:'Seit wann haben Sie diese Schmerzen? Haben Sie auch Fieber?',
+        q:'Dokter ingin tahu soal:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Jenis makanan yang dimakan pasien', c:false},
+          {t:'Kapan sakit mulai dan apakah ada demam', c:true},
+          {t:'Obat yang sudah diminum sebelumnya', c:false},
+          {t:'Alergi pasien', c:false}
+        ]},
+      /* 5 — Patient answers duration */
+      { sp:'patient', dl:'Seit gestern Abend. Ich habe kein Fieber, aber das Licht stört mich sehr.',
+        q:'Pasien menjawab bahwa sakitnya sudah dimulai:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Sejak tiga hari yang lalu', c:false},
+          {t:'Sejak kemarin malam', c:true},
+          {t:'Sejak pagi ini', c:false},
+          {t:'Sejak seminggu lalu', c:false}
+        ]},
+      /* 6 — Doctor gives advice/medicine */
+      { sp:'doctor', dl:'Ich verschreibe Ihnen Schmerztabletten. Ruhen Sie sich aus und trinken Sie viel Wasser.',
+        q:'Was empfiehlt der Doktor dem Patienten?',
+        qtype:'de-q-de-a',
+        ch:[
+          {t:'Viel Sport treiben', c:false},
+          {t:'Tabletten nehmen, ausruhen, viel Wasser trinken', c:true},
+          {t:'Ins Krankenhaus gehen', c:false},
+          {t:'Nichts essen', c:false}
+        ]},
+      /* 7 — Patient asks: before or after eating? */
+      { sp:'patient', dl:'Soll ich die Tabletten vor oder nach dem Essen nehmen?',
+        q:'Pasien ingin tahu tentang:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Nama obat yang diberikan', c:false},
+          {t:'Waktu minum obat — sebelum atau sesudah makan', c:true},
+          {t:'Harga obat tersebut', c:false},
+          {t:'Berapa lama harus istirahat', c:false}
+        ]},
+      /* 8 — Doctor answers instructions */
+      { sp:'doctor', dl:'Nehmen Sie die Tabletten nach dem Essen, zweimal täglich.',
+        q:'Kapan dan berapa kali sehari pasien harus minum obat?',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Sebelum makan, sekali sehari', c:false},
+          {t:'Sesudah makan, dua kali sehari', c:true},
+          {t:'Sesudah makan, tiga kali sehari', c:false},
+          {t:'Sebelum makan, empat kali sehari', c:false}
+        ]},
+      /* 9 — Patient says thank you */
+      { sp:'patient', dl:'Vielen Dank, Herr Doktor! Das ist sehr hilfreich.',
+        q:'Ungkapan "Vielen Dank" digunakan untuk:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Menyapa seseorang', c:false},
+          {t:'Mengucapkan terima kasih', c:true},
+          {t:'Meminta maaf', c:false},
+          {t:'Berpamitan', c:false}
+        ]},
+      /* 10 — Doctor goodbye + recovery wish */
+      { sp:'doctor', dl:'Gern geschehen! Gute Besserung und auf Wiedersehen!',
+        q:'Was bedeutet "Gute Besserung"?',
+        qtype:'de-q-de-a',
+        ch:[
+          {t:'Guten Morgen!', c:false},
+          {t:'Bis morgen!', c:false},
+          {t:'Semoga cepat sembuh!', c:true},
+          {t:'Sampai jumpa lagi!', c:false}
+        ]},
+    ]
+  },
+
+  /* ── BAUCHSCHMERZEN ── */
+  {
+    name: 'Bauchschmerzen', emoji: '🤢', ac: 'ab',
+    steps: [
+      /* 1 */
+      { sp:'patient', dl:'Hallo! Guten Morgen. Ich bin hier wegen meiner Beschwerden.',
+        q:'Kata "Beschwerden" dalam konteks ini berarti:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Nama pasien', c:false},
+          {t:'Keluhan atau gejala sakit', c:true},
+          {t:'Janji dengan dokter', c:false},
+          {t:'Nama obat', c:false}
+        ]},
+      /* 2 */
+      { sp:'doctor', dl:'Guten Morgen! Bitte Platz nehmen. Was kann ich für Sie tun?',
+        q:'Apa yang ditawarkan dokter kepada pasien?',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Dokter meminta pasien pergi', c:false},
+          {t:'Dokter menawarkan bantuan', c:true},
+          {t:'Dokter meminta uang', c:false},
+          {t:'Dokter memberi obat langsung', c:false}
+        ]},
+      /* 3 */
+      { sp:'patient', dl:'Ich habe starke Bauchschmerzen. Mein Bauch tut sehr weh.',
+        q:'Was sagt der Patient über seinen Bauch?',
+        qtype:'de-q-de-a',
+        ch:[
+          {t:'Er hat Kopfschmerzen.', c:false},
+          {t:'Er hat Fieber und Husten.', c:false},
+          {t:'Er hat starke Bauchschmerzen.', c:true},
+          {t:'Er fühlt sich müde.', c:false}
+        ]},
+      /* 4 */
+      { sp:'doctor', dl:'Seit wann haben Sie die Schmerzen? Haben Sie etwas Ungewöhnliches gegessen?',
+        q:'Selain menanyakan durasi, dokter juga menanyakan:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Apakah pasien berolahraga', c:false},
+          {t:'Apakah pasien makan sesuatu yang tidak biasa', c:true},
+          {t:'Berapa berat badan pasien', c:false},
+          {t:'Apakah pasien punya alergi obat', c:false}
+        ]},
+      /* 5 */
+      { sp:'patient', dl:'Seit heute Morgen. Ich habe gestern Abend etwas Scharfes gegessen.',
+        q:'Pasien mengatakan bahwa sakitnya dimulai:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Sejak tiga hari yang lalu', c:false},
+          {t:'Sejak pagi ini, setelah makan pedas kemarin malam', c:true},
+          {t:'Sejak seminggu yang lalu', c:false},
+          {t:'Sejak kemarin pagi', c:false}
+        ]},
+      /* 6 */
+      { sp:'doctor', dl:'Ich empfehle Ihnen leichte Speisen und Ruhe. Ich gebe Ihnen auch Magentropfen.',
+        q:'Was empfiehlt der Doktor?',
+        qtype:'de-q-de-a',
+        ch:[
+          {t:'Viel Sport und scharfes Essen', c:false},
+          {t:'Leichte Speisen, Ruhe und Magentropfen', c:true},
+          {t:'Sofort operieren lassen', c:false},
+          {t:'Viel Kaffee trinken', c:false}
+        ]},
+      /* 7 */
+      { sp:'patient', dl:'Soll ich die Tropfen vor oder nach dem Essen nehmen?',
+        q:'Pasien bertanya tentang:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Nama dokter', c:false},
+          {t:'Waktu minum obat tetes — sebelum atau sesudah makan', c:true},
+          {t:'Harga obat yang diberikan', c:false},
+          {t:'Apakah obat punya efek samping', c:false}
+        ]},
+      /* 8 */
+      { sp:'doctor', dl:'Nehmen Sie die Tropfen dreimal täglich, vor dem Essen.',
+        q:'Instruksi dokter untuk minum obat tetes adalah:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Dua kali sehari, sesudah makan', c:false},
+          {t:'Tiga kali sehari, sebelum makan', c:true},
+          {t:'Empat kali sehari, sesudah makan', c:false},
+          {t:'Sekali sehari, sebelum tidur', c:false}
+        ]},
+      /* 9 */
+      { sp:'patient', dl:'Danke schön, Herr Doktor! Ich werde das machen.',
+        q:'"Ich werde das machen" menunjukkan bahwa pasien:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Menolak saran dokter', c:false},
+          {t:'Akan mengikuti instruksi dokter', c:true},
+          {t:'Tidak mengerti instruksi dokter', c:false},
+          {t:'Meminta obat lain', c:false}
+        ]},
+      /* 10 */
+      { sp:'doctor', dl:'Auf Wiedersehen! Erholen Sie sich schnell!',
+        q:'Apa arti "Erholen Sie sich schnell"?',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Pergi cepat!', c:false},
+          {t:'Minum obat dengan cepat!', c:false},
+          {t:'Semoga cepat pulih / sembuh!', c:true},
+          {t:'Datang kembali besok!', c:false}
+        ]},
+    ]
+  },
+
+  /* ── FIEBER ── */
+  {
+    name: 'Fieber', emoji: '🥵', ac: 'af',
+    steps: [
+      /* 1 */
+      { sp:'patient', dl:'Guten Tag! Ich habe einen Termin bei Doktor Müller.',
+        q:'Kata "Termin" dalam kalimat itu berarti:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Obat', c:false},
+          {t:'Janji temu', c:true},
+          {t:'Resep', c:false},
+          {t:'Tagihan', c:false}
+        ]},
+      /* 2 */
+      { sp:'doctor', dl:'Guten Tag! Bitte kommen Sie rein. Wie geht es Ihnen?',
+        q:'"Wie geht es Ihnen?" adalah cara bertanya:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Nama seseorang', c:false},
+          {t:'Keadaan atau kondisi seseorang', c:true},
+          {t:'Usia seseorang', c:false},
+          {t:'Alamat seseorang', c:false}
+        ]},
+      /* 3 */
+      { sp:'patient', dl:'Mir geht es nicht gut. Ich habe hohes Fieber und fühle mich sehr schwach.',
+        q:'Was klagt der Patient?',
+        qtype:'de-q-de-a',
+        ch:[
+          {t:'Er hat Bauchschmerzen und Husten.', c:false},
+          {t:'Er hat hohes Fieber und fühlt sich schwach.', c:true},
+          {t:'Er hat Kopfschmerzen.', c:false},
+          {t:'Er fühlt sich sehr gut.', c:false}
+        ]},
+      /* 4 */
+      { sp:'doctor', dl:'Seit wann haben Sie Fieber? Haben Sie die Temperatur gemessen?',
+        q:'Selain menanyakan durasi, dokter juga menanyakan:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Apakah pasien sudah minum obat', c:false},
+          {t:'Apakah pasien sudah mengukur suhu tubuh', c:true},
+          {t:'Apakah pasien makan dengan teratur', c:false},
+          {t:'Apakah pasien berolahraga', c:false}
+        ]},
+      /* 5 */
+      { sp:'patient', dl:'Seit zwei Tagen. Ja, ich habe 39 Grad Fieber.',
+        q:'Berapa suhu tubuh pasien dan sudah berapa lama?',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'37 derajat, sudah sehari', c:false},
+          {t:'39 derajat, sudah dua hari', c:true},
+          {t:'40 derajat, sudah tiga hari', c:false},
+          {t:'38 derajat, sudah seminggu', c:false}
+        ]},
+      /* 6 */
+      { sp:'doctor', dl:'Das ist hohes Fieber. Ich verschreibe Ihnen Fiebersenker. Bleiben Sie im Bett.',
+        q:'Apa yang diresepkan dokter dan apa yang disarankan?',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Obat batuk dan disarankan banyak bergerak', c:false},
+          {t:'Obat penurun demam dan disarankan istirahat di tempat tidur', c:true},
+          {t:'Vitamin dan disarankan makan banyak', c:false},
+          {t:'Antibiotik dan disarankan ke rumah sakit', c:false}
+        ]},
+      /* 7 */
+      { sp:'patient', dl:'Soll ich das Medikament vor oder nach dem Essen einnehmen?',
+        q:'Pasien bertanya tentang:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Nama dokter yang meresepkan', c:false},
+          {t:'Waktu minum obat — sebelum atau sesudah makan', c:true},
+          {t:'Efek samping obat tersebut', c:false},
+          {t:'Apakah obat dijual bebas', c:false}
+        ]},
+      /* 8 */
+      { sp:'doctor', dl:'Nehmen Sie das Medikament nach dem Essen. Einmal morgens, einmal abends.',
+        q:'Berapa kali sehari dan kapan pasien harus minum obat?',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Tiga kali sehari, setiap siang', c:false},
+          {t:'Dua kali sehari — pagi dan malam, sesudah makan', c:true},
+          {t:'Sekali sehari, sebelum tidur', c:false},
+          {t:'Empat kali sehari sesudah makan', c:false}
+        ]},
+      /* 9 */
+      { sp:'patient', dl:'Herzlichen Dank! Sie haben mir sehr geholfen.',
+        q:'"Sie haben mir sehr geholfen" artinya pasien merasa:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Dokter tidak membantu', c:false},
+          {t:'Dokter sangat membantu dirinya', c:true},
+          {t:'Dokter berbicara terlalu banyak', c:false},
+          {t:'Pasien tidak puas dengan layanan', c:false}
+        ]},
+      /* 10 */
+      { sp:'doctor', dl:'Bitte sehr! Gute Besserung! Auf Wiedersehen!',
+        q:'Apa yang biasanya dikatakan dokter saat mengakhiri konsultasi?',
+        qtype:'de-q-de-a',
+        ch:[
+          {t:'Guten Morgen!', c:false},
+          {t:'Gute Besserung! Auf Wiedersehen!', c:true},
+          {t:'Bitte kommen Sie rein!', c:false},
+          {t:'Was fehlt Ihnen?', c:false}
+        ]},
+    ]
+  },
+
+  /* ── HUSTEN ── */
+  {
+    name: 'Husten', emoji: '😮‍💨', ac: 'ah',
+    steps: [
+      /* 1 */
+      { sp:'patient', dl:'Guten Morgen! Ich heiße Jana Bauer. Ich habe heute einen Termin.',
+        q:'"Ich heiße Jana Bauer" adalah cara pasien:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Menanyakan nama dokter', c:false},
+          {t:'Memperkenalkan namanya sendiri', c:true},
+          {t:'Mengucapkan selamat tinggal', c:false},
+          {t:'Meminta resep obat', c:false}
+        ]},
+      /* 2 */
+      { sp:'doctor', dl:'Guten Morgen, Frau Bauer! Willkommen. Was bringt Sie heute zu mir?',
+        q:'Apa yang ingin diketahui dokter dengan pertanyaan itu?',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Nama lengkap pasien', c:false},
+          {t:'Alasan pasien datang hari ini', c:true},
+          {t:'Nomor asuransi kesehatan', c:false},
+          {t:'Riwayat penyakit keluarga', c:false}
+        ]},
+      /* 3 */
+      { sp:'patient', dl:'Ich habe starken Husten und Halsschmerzen seit drei Tagen.',
+        q:'Was sagt die Patientin über ihre Symptome?',
+        qtype:'de-q-de-a',
+        ch:[
+          {t:'Sie hat Fieber und Bauchschmerzen.', c:false},
+          {t:'Sie hat starken Husten und Halsschmerzen.', c:true},
+          {t:'Sie hat Kopfschmerzen.', c:false},
+          {t:'Sie fühlt sich sehr gut.', c:false}
+        ]},
+      /* 4 */
+      { sp:'doctor', dl:'Seit wann haben Sie den Husten? Haben Sie auch Fieber gehabt?',
+        q:'Selain durasi, apa lagi yang ditanyakan dokter?',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Apakah pasien punya alergi makanan', c:false},
+          {t:'Apakah pasien pernah demam juga', c:true},
+          {t:'Obat apa yang sudah diminum', c:false},
+          {t:'Apakah pasien merokok', c:false}
+        ]},
+      /* 5 */
+      { sp:'patient', dl:'Seit drei Tagen. Ich hatte kein Fieber, aber mein Hals ist sehr wund.',
+        q:'Kondisi tenggorokan pasien adalah:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Baik-baik saja', c:false},
+          {t:'Sangat sakit / luka', c:true},
+          {t:'Sedikit gatal saja', c:false},
+          {t:'Sudah membaik', c:false}
+        ]},
+      /* 6 */
+      { sp:'doctor', dl:'Öffnen Sie bitte den Mund. Ich verschreibe Ihnen Hustensaft und Halstabletten.',
+        q:'Was verschreibt der Doktor?',
+        qtype:'de-q-de-a',
+        ch:[
+          {t:'Schmerztabletten und Augentropfen', c:false},
+          {t:'Hustensaft und Halstabletten', c:true},
+          {t:'Magentropfen und Vitamine', c:false},
+          {t:'Fiebersenker und Antibiotika', c:false}
+        ]},
+      /* 7 */
+      { sp:'patient', dl:'Soll ich den Hustensaft vor oder nach dem Essen nehmen?',
+        q:'Pasien bertanya kapan harus minum:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Tablet vitamin', c:false},
+          {t:'Sirup obat batuk — sebelum atau sesudah makan', c:true},
+          {t:'Obat tetes mata', c:false},
+          {t:'Antibiotik', c:false}
+        ]},
+      /* 8 */
+      { sp:'doctor', dl:'Nehmen Sie den Hustensaft nach dem Essen. Zweimal täglich — morgens und abends.',
+        q:'Instruksi dokter untuk sirup obat batuk adalah:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Sebelum makan, tiga kali sehari', c:false},
+          {t:'Sesudah makan, dua kali sehari — pagi dan malam', c:true},
+          {t:'Sebelum tidur, sekali sehari', c:false},
+          {t:'Sesudah makan, empat kali sehari', c:false}
+        ]},
+      /* 9 */
+      { sp:'patient', dl:'Vielen Dank! Wann soll ich wiederkommen?',
+        q:'Selain berterima kasih, pasien juga bertanya:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Berapa biaya konsultasinya', c:false},
+          {t:'Kapan harus kembali lagi', c:true},
+          {t:'Apakah obatnya mahal', c:false},
+          {t:'Apa nama penyakitnya', c:false}
+        ]},
+      /* 10 */
+      { sp:'doctor', dl:'Kommen Sie in einer Woche wieder. Gute Besserung! Auf Wiedersehen!',
+        q:'Dokter meminta pasien kembali dalam:',
+        qtype:'de-q-id-a',
+        ch:[
+          {t:'Satu hari', c:false},
+          {t:'Satu minggu', c:true},
+          {t:'Satu bulan', c:false},
+          {t:'Tiga hari', c:false}
+        ]},
+    ]
+  },
+];
+
+/* ══════════════════════════════════════════
+   MAIN HOSPITAL ENGINE
+══════════════════════════════════════════ */
+let sIdx, hAns;
+const TOTAL_STEPS = 10;
+const PPS = 60 / TOTAL_STEPS; // 6 pts per correct answer
+
+function initHosp() {
+  sIdx = 0;
+  hAns = false;
+  G.sc.hosp = 0;
+  $('pEmoji').textContent = G.ill.emoji;
+  $('pEmoji').className   = 'se2 ' + G.ill.ac;
+  $('rpEmoji').textContent = G.ill.emoji;
+  $('rpEmoji').className   = 'se2 ' + G.ill.ac;
+  updHospHUD();
+  renderStep();
+}
+
+function updHospHUD() {
+  const pct = Math.min(100, 40 + Math.round((total() / 100) * 60));
+  $('xbH').style.width  = pct + '%';
+  $('xdH').textContent  = total();
+}
+
+function renderStep() {
+  hAns = false;
+  const s = G.ill.steps[sIdx];
+
+  // Stage: who is talking
+  const doc = $('sDoc'), pat = $('sPat'), bub = $('stBub');
+  doc.classList.remove('talking', 'dim');
+  pat.classList.remove('talking', 'dim');
+
+  if (s.sp === 'doctor') {
+    doc.classList.add('talking');
+    pat.classList.add('dim');
+    bub.classList.remove('hidden');
+    $('bWho').textContent = '👨‍⚕️ Doktor';
+    $('bTxt').textContent = s.dl;
+    currentDialogueLine = s.dl;
+    speak(s.dl, 'de-DE', 0.85);
+  } else if (s.sp === 'patient') {
+    pat.classList.add('talking');
+    doc.classList.add('dim');
+    bub.classList.remove('hidden');
+    $('bWho').textContent = '😷 Pasien';
+    $('bTxt').textContent = s.dl;
+    currentDialogueLine = s.dl;
+    speak(s.dl, 'de-DE', 0.85);
+  } else {
+    bub.classList.add('hidden');
+    currentDialogueLine = '';
+  }
+
+  // Step counter in topbar
+  const pct = Math.min(100, 40 + Math.round((total() / 100) * 60));
+  $('xbH').style.width = pct + '%';
+
+  // Render question or dial-only
+  const sc = $('stepContent');
+  sc.innerHTML = '';
+
+  const qcard = document.createElement('div');
+
+  if (s.q) {
+    // Multiple choice
+    qcard.className = 'qcard';
+    qcard.innerHTML = `
+      <div class="qhead">
+        <span class="qph" style="background:rgba(28,176,246,.13);color:var(--b2)">Pertanyaan</span>
+        <span class="qcnt">${sIdx + 1} / ${TOTAL_STEPS}</span>
+      </div>
+      <div class="qtxt" id="qTxt">${s.q}</div>
+      <div class="qchoices" id="qChoices"></div>
+    `;
+    sc.appendChild(qcard);
+
+    const cc = qcard.querySelector('#qChoices');
+    s.ch.forEach((ch, i) => {
+      const b = document.createElement('button');
+      b.className = 'choice';
+      b.innerHTML = `<span style="font-size:.8rem;opacity:.5">${String.fromCharCode(65+i)}</span> ${ch.t}`;
+      b.onclick = () => answerH(i, b, ch.c, s);
+      cc.appendChild(b);
+    });
+  } else {
+    // No question — just read and continue
+    qcard.className = 'dial-only';
+    qcard.innerHTML = `
+      <div class="dol">${sIdx + 1} / ${TOTAL_STEPS} — Baca dan dengarkan</div>
+      <div class="dot">${s.dl || ''}</div>
+    `;
+    sc.appendChild(qcard);
+    // Auto-show continue button
+    const cb = $('contBtn');
+    cb.classList.remove('hidden');
+    cb.className = 'btn bg bfw';
+    cb.textContent = sIdx < G.ill.steps.length - 1 ? 'Lanjut →' : 'Lihat Ulasan →';
+    $('botAct').className = 'botact';
+    $('botFb').classList.add('hidden');
+    return;
+  }
+
+  // Reset bottom bar
+  $('botFb').classList.add('hidden');
+  $('contBtn').classList.add('hidden');
+  $('botAct').className = 'botact';
+}
+
+function answerH(idx, btn, correct, step) {
+  if (hAns) return;
+  hAns = true;
+
+  $('stepContent').querySelectorAll('.choice').forEach(b => b.disabled = true);
+
+  if (!correct) {
+    btn.classList.add('no');
+    $('stepContent').querySelectorAll('.choice').forEach((b, i) => {
+      if (step.ch[i].c) b.classList.add('ok');
+    });
+    G.err++;
+  } else {
+    btn.classList.add('ok');
+    G.sc.hosp = Math.min(60, G.sc.hosp + PPS);
+    updHospHUD();
+  }
+
+  // Feedback
+  const fb = $('botFb'), ba = $('botAct'), cb = $('contBtn');
+  fb.classList.remove('hidden');
+
+  if (correct) {
+    ba.className  = 'botact ok';
+    fb.className  = 'botfb ok';
+    $('fbI').textContent = '✅';
+    $('fbT').textContent = 'Richtig! Weiter so!';
+    cb.className  = 'btn bg bfw';
+  } else {
+    ba.className  = 'botact no';
+    fb.className  = 'botfb no';
+    $('fbI').textContent = '❌';
+    $('fbT').textContent = 'Falsch! Perhatikan konteks percakapannya.';
+    cb.className  = 'btn br bfw';
+  }
+
+  cb.classList.remove('hidden');
+  cb.textContent = sIdx < G.ill.steps.length - 1 ? 'Lanjut →' : 'Lihat Ulasan →';
+}
+
+function nextStep() {
+  sIdx++;
+  if (sIdx >= G.ill.steps.length) {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    finishGame();
+  } else {
+    renderStep();
+  }
+}
+
+/* ══════════════════════════════════════════
+   FINISH
+══════════════════════════════════════════ */
+function finishGame() {
+  const elapsed = Date.now() - G.t0;
+  const tot     = total();
+  let tr, gr, gc;
+
+  if      (tot >= 90) { tr = '🏆'; gr = 'Luar Biasa! 🌟';    gc = 'var(--g2)'; }
+  else if (tot >= 75) { tr = '🥇'; gr = 'Sangat Bagus! 😊';   gc = 'var(--b2)'; }
+  else if (tot >= 60) { tr = '🥈'; gr = 'Bagus! 👍';           gc = 'var(--o)';  }
+  else if (tot >= 45) { tr = '🥉'; gr = 'Cukup Baik! 💪';      gc = 'var(--p)';  }
+  else                { tr = '📚'; gr = 'Coba Lagi! 🔁';       gc = 'var(--r)';  }
+
+  $('fTr').textContent  = tr;
+  $('fGr').textContent  = gr;
+  $('fGr').style.color  = gc;
+  $('fNm').textContent  = G.name;
+  $('fSc').textContent  = `${tot} / 100`;
+  $('fSc').style.color  = gc;
+  $('fTi').textContent  = '⏱ ' + fmt(elapsed);
+  $('sb1').textContent  = G.sc.nav  + '/30';
+  $('sb2').textContent  = G.sc.rec  + '/10';
+  $('sb3').textContent  = Math.round(G.sc.hosp) + '/60';
+  $('sb4').textContent  = G.err + ' ×';
+
+  showScreen('finish');
+}
+
+function goReview() {
+  initReview();
+  showScreen('review');
+}
+
+function restart() {
+  $('pname').value = '';
+  G.name = ''; G.err = 0; G.sc = { nav:0, rec:0, hosp:0 };
+  G.ill  = ILLS[Math.floor(Math.random() * ILLS.length)];
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  showScreen('start');
+}
+
+/* ══════════════════════════════════════════
+   REVIEW SCENE
+══════════════════════════════════════════ */
+let revIdx = 0;
+let revPlaying = false;
+let revTimer = null;
+let revAutoRunning = false;
+
+function initReview() {
+  revIdx = 0;
+  revPlaying = false;
+  revAutoRunning = false;
+  clearTimeout(revTimer);
+  window.speechSynthesis && window.speechSynthesis.cancel();
+
+  // Set patient emoji
+  $('rpEmoji').textContent = G.ill.emoji;
+  $('rpEmoji').className   = 'se2 ' + G.ill.ac;
+
+  // Build line list
+  buildRevList();
+  $('revTotal').textContent = G.ill.steps.length;
+  $('revProgLbl').textContent = `1/${G.ill.steps.length}`;
+  $('revProgTxt').textContent = `0 / ${G.ill.steps.length}`;
+  $('revPlayBtn').textContent = '▶ Putar';
+  highlightRevLine(0);
+  showRevBubble(0);
+}
+
+function buildRevList() {
+  const list = $('revList');
+  list.innerHTML = '';
+  G.ill.steps.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'rev-line';
+    row.id = `rl${i}`;
+    const em  = s.sp === 'doctor' ? '👨‍⚕️' : '😷';
+    const who = s.sp === 'doctor' ? 'Doktor' : 'Pasien';
+    row.innerHTML = `
+      <div class="rlem">${em}</div>
+      <div class="rltxt">
+        <div class="rlwho">${who}</div>
+        ${s.dl || ''}
+      </div>
+    `;
+    row.onclick = () => jumpRevTo(i);
+    list.appendChild(row);
+  });
+}
+
+function highlightRevLine(i) {
+  document.querySelectorAll('.rev-line').forEach((r, j) => {
+    r.classList.toggle('active', j === i);
+  });
+  // Scroll into view
+  const el = $(`rl${i}`);
+  if (el) el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function showRevBubble(i) {
+  const s = G.ill.steps[i];
+  if (!s) return;
+  const bub = $('rbub');
+  const rsdoc = $('rsDoc'), rspat = $('rsPat');
+
+  bub.querySelector('#rbWho').textContent = s.sp === 'doctor' ? '👨‍⚕️ Doktor' : '😷 Pasien';
+  bub.querySelector('#rbTxt').textContent = s.dl || '…';
+
+  rsdoc.classList.remove('talking', 'dim');
+  rspat.classList.remove('talking', 'dim');
+
+  if (s.sp === 'doctor') {
+    rsdoc.classList.add('talking');
+    rspat.classList.add('dim');
+  } else {
+    rspat.classList.add('talking');
+    rsdoc.classList.add('dim');
+  }
+
+  $('revProgLbl').textContent = `${i+1}/${G.ill.steps.length}`;
+  $('revProgTxt').textContent = `${i} / ${G.ill.steps.length}`;
+}
+
+function jumpRevTo(i) {
+  clearTimeout(revTimer);
+  revAutoRunning = false;
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  revIdx = i;
+  highlightRevLine(i);
+  showRevBubble(i);
+  if (G.ill.steps[i].dl) {
+    speak(G.ill.steps[i].dl, 'de-DE', 0.82);
+  }
+  $('revPlayBtn').textContent = '▶ Putar';
+  revPlaying = false;
+}
+
+function revPlayPause() {
+  if (revPlaying) {
+    // Pause
+    revPlaying = false;
+    revAutoRunning = false;
+    clearTimeout(revTimer);
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    $('revPlayBtn').textContent = '▶ Lanjut';
+  } else {
+    // Play / resume
+    revPlaying = true;
+    $('revPlayBtn').textContent = '⏸ Jeda';
+    playRevStep(revIdx);
+  }
+}
+
+function playRevStep(i) {
+  if (!revPlaying) return;
+  if (i >= G.ill.steps.length) {
+    // Done
+    revPlaying = false;
+    revAutoRunning = false;
+    $('revPlayBtn').textContent = '↺ Ulangi';
+    revIdx = 0;
+    $('revProgTxt').textContent = `${G.ill.steps.length} / ${G.ill.steps.length}`;
+    return;
+  }
+
+  revIdx = i;
+  highlightRevLine(i);
+  showRevBubble(i);
+
+  const s = G.ill.steps[i];
+  const text = s.dl || '';
+
+  if (ttsEnabled && text) {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'de-DE';
+    u.rate = 0.82;
+    u.pitch = 1.0;
+    u.onend = () => {
+      if (!revPlaying) return;
+      // Pause 700ms between lines
+      revTimer = setTimeout(() => playRevStep(i + 1), 700);
+    };
+    u.onerror = () => {
+      revTimer = setTimeout(() => playRevStep(i + 1), 1500);
+    };
+    window.speechSynthesis.speak(u);
+  } else {
+    // No TTS — just advance with timer
+    const delay = Math.max(1800, text.length * 55);
+    revTimer = setTimeout(() => playRevStep(i + 1), delay);
+  }
+
+  $('revProgTxt').textContent = `${i} / ${G.ill.steps.length}`;
+}
+
+function skipReview() {
+  revPlaying = false;
+  revAutoRunning = false;
+  clearTimeout(revTimer);
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  showScreen('finish');
+}
+</script>
+</body>
+</html>
